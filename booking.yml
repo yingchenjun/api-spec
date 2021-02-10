@@ -1,0 +1,1184 @@
+openapi: 3.0.0
+info:
+  description: API to create transport bookings in Linfox TMS
+  version: "V1"
+  title: Linfox Customer Portal Booking API
+  contact:
+    email: chenjun_ying@linfox.com
+tags:
+  - name: developers
+    description: API available for developers
+  - name: booking
+    description: API available  for create bookings
+paths:
+  /ping:
+    summary: /ping
+    get:
+      tags:
+        - developers
+      summary: return API version
+      operationId: ping
+      parameters: []
+      responses:
+        '200':
+          description: current API version
+          headers: {}
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  version:
+                    type: string
+                    description: API version
+                    example: v01
+              examples: {}
+          links: {}
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+  /services:
+    get:
+      tags:
+        - booking
+      summary: get transport services 
+      operationId: getServices
+      description: |
+        return available service types for a given contract
+      parameters:
+        - in: query
+          name: contractID
+          description: contract unique identifier
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: list of service types for the contract
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/getServices_response'
+        '400':
+          description: bad input parameter
+  /commodities:
+    get:
+      tags:
+        - booking
+      summary: get commodities
+      operationId: getCommodities
+      description: |
+        return available commodities for a given service
+      parameters:
+        - in: query
+          name: contractID
+          description: contract unique identifier
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: 157addc6-b980-43ae-925b-64cb7a4eab0e
+        - in: query
+          name: serviceID
+          description: service unique identifier
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: 157addc6-b980-43ae-925b-64cb7a4eab0e
+      responses:
+        '200':
+          description: list of commodities for the service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/getCommodities_response'
+        '400':
+          description: bad input parameter
+  /templates:
+    get:
+      tags:
+        - booking
+      summary: get booking template
+      operationId: getTemplates
+      parameters:
+        - name: contractID
+          in: query
+          description:  contract unique identifier
+          schema:
+            type: string
+            format: uuid
+            example: 157addc6-b980-43ae-925b-64cb7a4eab0e
+        - name: serviceID
+          in: query
+          description: service unique identifier
+          schema:
+            type: string
+            format: uuid
+            example: 157addc6-b980-43ae-925b-64cb7a4eab0e
+        - name: commodityID
+          in: query
+          description: commodity unique identifier
+          required: false
+          schema:
+            type: string
+            format: uuid
+            example: 157addc6-b980-43ae-925b-64cb7a4eab0e
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/getTemplates_response'
+        '400':
+          description: bad request
+  /tempaltes/{templateID}:
+    get:
+      tags:
+        - booking
+      summary: get booking template
+      operationId: getTemplateByID
+      parameters:
+        - name: templateID
+          in: path
+          description:  template unique identifier
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: 157addc6-b980-43ae-925b-64cb7a4eab0e
+      responses:
+        '200':
+          description: get the template by template identifier
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/getTemplateByID_response'
+        '400':
+          description: bad input parameter
+  /bookings/{bookingID}:
+    get:
+      tags:
+        - booking
+      summary: get the booking details by booking identifier
+      operationId: getBookingByID
+      parameters:
+        - name: bookingID
+          in: path
+          description: booking unique identifier
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: 157addc6-b980-43ae-925b-64cb7a4eab0e
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/getBookingByID_response'
+        '400':
+          description: bad request
+  /bookings:
+    get:
+      tags:
+        - booking
+      summary: get all bookings
+      operationId: getBookings
+      description: |
+        search bookings
+      parameters:
+        - in: query
+          name: contractID
+          description: contract unique identifier
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: serviceID
+          description: service unique identifier
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: limit
+          description: the number of items to return in one request. Limit is default to 10 if the limit parameter is not specified. The value is capped at 100.
+          required: false
+          schema:
+            type: integer
+        - in: query
+          name: start
+          description: the number of items to skip before selecting. 
+          required: false
+          schema:
+            type: integer
+        - in: query
+          name: sort
+          description: sort expression
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: keyword
+          description: search for booking nujmber and customer reference number
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: location
+          description: search on pickup and delivery locations
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: status
+          description: booking status search
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: createdBy
+          description: search for booking createdBy user and account
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: list of commodities for the service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/getBookings_response'
+        '400':
+          description: bad input parameter
+    post:
+      tags:
+        - booking
+      summary: create a new booking
+      operationId: createBooking
+      requestBody:
+        content: 
+          application/json:
+            schema:
+              $ref: '#/components/schemas/booking'
+      responses:
+        '201':
+          description: booking created 
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/createBooking_response'
+        '400':
+          description: bad request
+components:
+  securitySchemes:
+    jwt:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    getServices_response:
+      required:
+        - data
+        - id
+        - status
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/service'
+        id:
+          type: string
+          example: ee43d051-b763-4070-b619-b7e95c5ea304
+        message:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/error'
+        status:
+          type: string
+          example: SUCCESS
+          enum:
+            - SUCCESS
+            - ERROR
+    getCommodities_response:
+      required:
+        - data
+        - id
+        - status
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/commodity'
+        id:
+          type: string
+          example: ee43d051-b763-4070-b619-b7e95c5ea304
+        message:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/error'
+        status:
+          type: string
+          example: SUCCESS
+          enum:
+            - SUCCESS
+            - ERROR
+    getTemplates_response:
+      required:
+        - data
+        - id
+        - status
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/template'
+        id:
+          type: string
+          example: ee43d051-b763-4070-b619-b7e95c5ea304
+        message:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/error'
+        status:
+          type: string
+          example: SUCCESS
+          enum:
+            - SUCCESS
+            - ERROR   
+    getTemplateByID_response:
+      required:
+        - data
+        - id
+        - status
+      type: object
+      properties:
+        data:
+            $ref: '#/components/schemas/template'
+        id:
+          type: string
+          example: ee43d051-b763-4070-b619-b7e95c5ea304
+        message:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/error'
+        status:
+          type: string
+          example: SUCCESS
+          enum:
+            - SUCCESS
+            - ERROR   
+    getBookings_response:
+      required:
+        - data
+        - id
+        - status
+        - pagination
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/booking'
+        pagination:
+          $ref: '#/components/schemas/pagination'
+        id:
+          type: string
+          example: 'ee43d051-b763-4070-b619-b7e95c5ea304'
+        message:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/error'
+        status:
+          type: string
+          enum: ['SUCCESS', 'ERROR']
+          example: SUCCESS
+    getBookingByID_response:
+      required:
+        - data
+        - id
+        - status
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/booking'
+        id:
+          type: string
+          example: ee43d051-b763-4070-b619-b7e95c5ea304
+        message:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/error'
+        status:
+          type: string
+          example: SUCCESS
+          enum:
+            - SUCCESS
+            - ERROR
+    createBooking_response:
+      required:
+        - data
+        - id
+        - status
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              bookingID:
+                type: string
+                format: uuid
+                description: booking unique identifier
+                example: 4eb218e2-c0bc-4c66-9c69-8b679754f734
+              tmsReferenceNumber:
+                type: string
+                description: shipment reference number from the TMS
+                example: 1224785
+        id:
+          type: string
+          example: ee43d051-b763-4070-b619-b7e95c5ea304
+        message:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/error'
+        status:
+          type: string
+          example: SUCCESS
+          enum:
+            - SUCCESS
+            - ERROR
+    service:
+      type: object
+      required:
+        - contractID
+        - contractCode
+        - contractName
+        - serviceID
+        - serviceCode
+        - serviceName
+      properties:
+        serviceID:
+          type: string
+          format: uuid
+          example: d290f1ee-6c54-4b01-90e6-d701748f0851
+        serviceCode:
+          type: string
+          example: G
+        serviceName:
+          type: string
+          example: General freight
+        contractID:
+          type: string
+          format: uuid
+          example: 1e34790a-fdd1-ea11-a813-000d3acb4d13
+        contractCode:
+          type: string
+          example: 123457896
+        contractName:
+          type: string
+          format: string
+          example: Cement Australia
+    commodity:
+      type: object
+      required:
+        - contractID
+        - contractCode
+        - contractName
+        - serviceID
+        - serviceCode
+        - serviceName
+        - commodityID
+        - commodityCode
+        - commodityName
+      properties:
+        contractID:
+          type: string
+          format: uuid
+          example: 1e34790a-fdd1-ea11-a813-000d3acb4d13
+        contractCode:
+          type: string
+          example: 123457896
+        contractName:
+          type: string
+          format: string
+          example: Cement Australia
+        serviceID:
+          type: string
+          format: uuid
+          example: d290f1ee-6c54-4b01-90e6-d701748f0851
+        serviceCode:
+          type: string
+          example: G
+        serviceName:
+          type: string
+          example: Airfreight
+        commodityID:
+          type: string
+          format: uuid
+          example: 15935f36-4e55-eb11-a812-000d3a6b55c5
+        commodityCode:
+          type: string
+          example: Amb
+        commodityName:
+          type: string
+          example: Ambient
+    template:
+      type: object
+      required:
+        - templateID
+        - contractID
+        - serviceID
+        - templateName
+        - templateVersion
+        - templateJSON
+      properties:
+        templateID:
+          type: string
+          format: uuid
+          description: Booking template unique identifier
+          example: 1e34790a-fdd1-ea11-a813-000d3acb4d13
+        contractID:
+          type: string
+          format: uuid
+          description: system contract identifier
+          example: 1e34790a-fdd1-ea11-a813-000d3acb4d13
+        serviceID:
+          type: string
+          format: uuid
+          description: system service identifier
+          example: 1e34790a-fdd1-ea11-a813-000d3acb4d13
+        commodityID:
+          type: string
+          format: uuid
+          description: system commodity identifier
+          example: 1e34790a-fdd1-ea11-a813-000d3acb4d13          
+        templateName:
+          type: string
+          format: string
+          description: Booking template name
+          example: FMG-AIR-AMB 
+        templateVersion:
+          type: string
+          format: string
+          description: Booking template version 
+          example: v1
+        templateJSON:
+          type: string
+          description: booking template JSON in base64 encoded string
+          example: adfkjkdfjksd;fj
+    booking:
+      type: object
+      required:
+        - bookingID
+        - bookingTemplateID
+        - bookingTemplateName
+        - bookingTemplateVersion
+        - contractID
+        - contractCode
+        - contractName
+        - serviceID
+        - serviceCode
+        - serviceName
+        - commodityID
+        - commodityCode
+        - commodityName
+        - bookingStatus
+        - pickupDetails
+        - deliveryDetails
+        - items
+        - equipments
+      properties:
+        bookingID:
+          type: string
+          description: unique booking identifier
+          example: 1001220 
+        bookingTemplateID:
+          type: string
+          description: system template identifier
+          example: 1e34790a-fdd1-ea11-a813-000d3acb4d13
+        bookingTemplateName:
+          type: string
+          description: template name for the booking
+          example: FMG-AIR-AMB 
+        bookingTemplateVersion:
+          type: string
+          description: template version for the booking
+          example: v1        
+        bookingStatus:
+          type: string
+          description: transaction status 
+          example: Submitted
+          enum:
+            - Draft
+            - Saved
+            - Submitted
+            - Approved
+            - Cancelled
+        contractID:
+          type: string
+          format: uuid
+          description: System contract identifier
+          example: 1e34790a-fdd1-ea11-a813-000d3acb4d13
+        contractCode:
+          type: string
+          description: Business contract ID  usually also used in SAP TM, BY TMS, and SAP ECC
+          example: 40264426
+        contractName:
+          type: string
+          format: string
+          description: Name of the business contract
+          example: Cement Australia
+        serviceID:
+          type: string
+          format: uuid
+          description: System service identifier
+          example: d290f1ee-6c54-4b01-90e6-d701748f0851
+        serviceCode:
+          type: string
+          description: Transportation Service code
+          example: G
+        serviceName:
+          type: string
+          description: Name of the transportation service like Rail or Air
+          example: General Transport
+        commodityID:
+          type: string
+          format: uuid
+          description: System commodity identifier
+          example: 15935f36-4e55-eb11-a812-000d3a6b55c5
+        commodityCode:
+          type: string
+          description: ID for the freight commodity 
+          example: Amb
+        commodityName:
+          type: string
+          description: Commodity usually describes the temperature requirements for freight transportation 
+          example: Ambient
+        bookingNumber:
+          type: string
+          description: unique booking number
+          example: B123456
+        customerReferenceNumber:
+          type: string
+          description: booking reference number provided by the customer
+          example: ABC123
+        ShipmentNumber:
+          type: string
+          description: Shipmet number from TMS
+          example: 54564654
+        urgentFlag:
+          type: boolean
+          description: indicator denominates that booking is to be handled urgently by the teams. This indicator influences communication and creation of Customer Service Cases
+          example: true
+        dangerousGoodsIndicator:
+          type: boolean
+          description: Dangerous Goods Indicator Flag at Booking Level. It influences TM, BY TMS and the Portal functionality.
+          example: false
+        overDimensionalFlag:
+          type: boolean
+          description: This flag is set by the user when the measurements of he freight exceed the dimensions of the vehicle. 
+          example: false
+        additionalReferences:
+          type: array
+          items:
+            $ref: '#/components/schemas/additionalReference'
+        creationDateTime:
+          type: string
+          format: date-time
+          description: UTC time Stamp of when the Booking record was first created. 
+          example: '2021-01-22T10:30:00Z'
+        ModifiedDateTime:
+          type: string
+          format: date-time
+          description: UTC time Stamp of when the Booking record was last modified.
+          example: '2021-01-22T10:30:00Z'
+        createdBy:
+          type: string
+          description: User name who created the Booking. 
+          example: user1@linfox.com
+        createdByAccount:
+          type: string
+          description: Account which created the booking.
+          example: Westrac
+        createdForAccount:
+          type: string
+          description:  Account for which the booking was created for.
+          example: FMG
+        pickupDetails:
+          type: object
+          properties:
+            location: 
+              $ref: '#/components/schemas/location'
+            contact:
+              $ref: '#/components/schemas/contact'
+            pickUpReference:
+              type: string
+              description: Reference that needs to be quoted when freight is picked up.
+            pickupInstruction:
+              type: string
+              description: Instructions to the truck driver who is collecting the freight.
+            pickupFromDateTime:
+              type: string
+              format: date-time
+              description: Start of the Time Window (UTC) from which the freight can be picked up.
+              example: '2021-01-21T09:00:00Z'
+            pickupToDateTime:
+              type: string
+              format: date-time
+              description: End of the Time Window (UTC) to which the freight can be collected. 
+              example: '2021-01-21T18:00:00Z'
+        deliveryDetails:
+          type: object
+          properties:
+            location: 
+              $ref: '#/components/schemas/location'
+            contact:
+              $ref: '#/components/schemas/contact'
+            deliveryReference:
+              type: string
+              description: Reference that needs to be quoted when freight is dropped off.
+            deliveryInstruction:
+              type: string
+              description: Instructions to the truck driver who is delivering the freight.
+            deliveryFromDateTime:
+              type: string
+              format: date-time
+              description: Start of the Time Window (UTC) from which the freight can be delivered.
+              example: '2021-01-22T09:00:00Z'
+            deliveryToDateTime:
+              type: string
+              format: date-time
+              description: End of the Time Window to (UTC) which the freight can be delivered. 
+              example: '2021-01-22T18:00:00Z'
+        railTransport:
+          $ref: '#/components/schemas/railTransport' 
+        documents:
+          type: array
+          items:
+            $ref: '#/components/schemas/document'
+        items: 
+          type: array
+          items:
+            $ref: '#/components/schemas/item'
+        equipments:
+          type: array
+          items:
+            $ref: '#/components/schemas/equipment'
+    additionalReference:
+      type: object
+      required:
+        - name
+        - value
+      properties:
+        name:
+          type: string
+          description: name of reference field
+          example: Customer
+        value:
+          type: string
+          description: value of the reference field
+          example: BHP
+    location:
+      type: object
+      required:
+        - locationCode
+      properties:
+        locationID:
+          type: string
+          format: uuid
+          description: System location identifier
+          example: 64f9389e-2f40-418c-be9d-9f5da4098092
+        locationCode:
+          type: string
+          description: Location code in the TMS
+          example: LFXGHO
+        locationName:
+          type: string
+          description: Company Name (if applicable)
+          example: Linfox Logistics HQ   
+        address1:
+          type: string
+          description: House Number, Street Name, and Street Type 
+          example: 55 English Street 
+        address2:
+          type: string
+          description: Additional text if needed
+          example:   
+        suburb:
+          type: string
+          description: Suburb name
+          example: Essendon Fields  
+        postcode:
+          type: string
+          description: Post code
+          example: 3041
+        state:
+          type: string
+          description: State short code
+          example: VIC
+        country:
+          type: string
+          description: Country name
+          example: Australia
+        coordinates:
+          $ref: '#/components/schemas/coordinates'
+    coordinates:
+      type: object
+      required:
+        - latitude
+        - longitude
+      properties:
+        latitude:
+          type: number
+          description: Geospecial Value, latitude of the location 
+          example: 37.7254569
+        longitude:
+          type: number
+          description: Geospecial Value, longitude of the location
+          example: 144.8950268
+    railTransport:
+      type: object
+      properties:
+        railOrigin: 
+          type: string
+          description: Rail Station code where the freight is lodged on the train.
+          example: ALT
+        railDestination:
+          type: string
+          description: Rail Station code where the freight is unloaded from the train.
+          example: MDE
+        railDepartureDateTime:
+          type: string
+          format: date-time
+          description: UTC Date and Time of the scheduled train departure from the Rail Origin
+          example: '2021-01-21T18:00:00Z'
+        shippingLLOYDS:
+          type: string
+          description: Registration Name / Number of the a vessel in the Lloyd's register. Also referred to as IMO.
+          example: 
+        shippingACOS:
+          type: string
+          description: Vessel registration Number with the Australian Chamber of Shipping (ACOS) 
+          example: ABCD12345
+        shippingVessel:
+          type: string
+          description: Vessel Name that on which the freight is nominated to travel.
+          example: SPIRIT OF TASMANIA II
+        shippingOutVoyage:
+          type: string
+          description: Sequence Number of the outbound journey from port 
+          example: 612
+        shippingLoadingPort:
+          type: string
+          description: Code of the Port where the freight is loaded on the vessel.
+          example: AUMEL
+        shippingCompany:
+          type: string
+          description: Company that handles the paperwork and insurance for the freight on he vessel.
+          example: Hapag Lloyd
+        shippingLateApproved:
+          type: boolean
+          description: Indicator denotes that the arrival of the freight to the port has been approved to be late
+          example: true
+        shippingDischargePort:
+          type: string
+          description: Code of the Port where the freight is discharged from the vessel
+          example: AUBNE
+        shippingFinalDestination:
+          type: string
+          description: name of the city that is the final destination for the freight
+          example: Moreton Bay
+        shippingStevedore:
+          type: string
+          description: Company who is responsible to stevedoring the vessel whilst in port.
+          example: Patricks
+        shippingUnderBond:
+          type: boolean
+          description: Indicator showing if the freight is travelling under a bond document issued by Customs
+          example: true
+        additionalReferences:
+          type: array
+          items:
+            $ref: '#/components/schemas/additionalReference'
+    document:
+      type: object
+      properties:
+        documentType:
+          type: string
+          description: The type of the document
+          example: ImageOverDimensional
+        name: 
+          type: string
+          description: The name of attached document
+          example: abc.png
+        contentType:
+          type: string
+          description: Specify the media type of the document
+          example: image/png 
+        url: 
+          type: string
+          description: The url link where the document is stored.  
+          example: https//documents.linfox.com/booking/123/abc.png
+    item:
+      type: object
+      properties:
+        lineItemID:
+          type: string
+          description: Multiple Line Items can be added to the ITEMS section of the booking. This is the Line Indicator
+          example: 10
+        itemType:
+          type: string
+          description: Denotes the type of item. Exchange Pallets like Chep are also items.  
+          example: 45HRC
+        itemDecription:
+          type: string
+          description: Description of the Item
+          example: 45 Foot HQ Rail Container
+        productID:
+          type: string
+          description: Product number or Product name also referred to as SKU.
+          example: ABCD-12345-90
+        itemQty:
+          type: number
+          description: Number of items in this item line of this Booking
+          example: 12
+        itemLength:
+          type: number
+          description: Length of the individual item 
+          example: 40
+        itemWidth:
+          type: number
+          description: Width of the individual item
+          example: 20
+        itemHeight:
+          type: number
+          description: Height of the individual item
+          example: 60
+        itemDimsUOM:
+          type: string
+          description: Unit Of Measure for all dimensions
+          example: CM
+        itemVolume:
+          type: number
+          description: Cubic Volume of the individual item
+          example: 60
+        itemVolumeUOM:
+          type: number
+          description: Unit Of Measure of the cubic volume
+          example: CBM
+        itemGrossWeight:
+          type: number
+          description: Gross Weight of the individual item (includes packaging)
+          example: 200
+        itemWeightUOM:
+          type: number
+          description: Unit Of Measure of the weight
+          example: 20
+        itemReference:
+          type: string
+          description: Reference related to the individual item like a Purchase Order Number 
+          example:
+        itemDocketNumber:
+          type: string
+          description: Documentation Reference related to the individual item like a connote number or Chep pallet hire docket number
+          example: AAABB 5632665
+        temperature:
+          type: string
+          description: Temperature at which the freight is to be transported
+          example: -20C
+        outOfGauge:
+          type: boolean
+          description: Indicator if the freight exceeds the dimensions of a vehicle
+          example: false
+        dgDetails:
+          $ref: '#/components/schemas/dgDetails'
+        itemBatchNumber:
+          type: string
+          description: Production Batch related to individual item
+          example: 2020-12233121
+        itemSSCC:
+          type: string
+          description: Serial Shipping Container Code - Identification label barcode value for the individual item. (If this is used the qty can only equal 1).
+          example: 123654466233
+        itemExpiryDate:
+          type: string
+          format: date-time
+          description: Expiry date of the individual item (used for food products)
+          example: 2022-10-02T00:00:00
+        itemExpiryValidate:
+          type: boolean
+          description: Indicator set by validating there is enough time between now and the expiry date. Calculations are specific to contracts.
+          example: false
+        itemMinLifeDays:
+          type: integer
+          description: Denotes the number of days the product must shelf life.
+          example: 20
+        shippingReference:
+          type: string
+          description: Reference number at individual item level 
+          example: ABCD12345
+        containerReference:
+          type: string
+          description: Reference at individual item level related to the Shipping
+          example: ABC123
+        containerNumber:
+          type: string
+          description: Shipping container number formatted Reference at individual item level
+          example: CSIU 200082 0
+        ern:
+          type: string
+          description: Export Reference Number at individual item level 
+          example: 1234568975
+        seal:  
+          type: string
+          description: Reference number at individual item level showing the seal on the container or truck
+          example: 12365-ABC-126
+        additionalReferences:
+          type: array
+          items:
+            $ref: '#/components/schemas/additionalReference'
+    dgDetails:
+      type: object
+      properties:
+        dgClass:
+          type: string
+          description: Dangerous Goods Class related to the individual item
+          example: . 3-Flamable
+        dgUnNumber:
+          type: string
+          description: UN Number related to the individual item
+          example: 1654
+        dgKiloLitre:
+          type: string
+          description: Active dangerous component of the freight item as volume for liquids or weight for solids.
+          example: 10kg
+        dgCountPackages:
+          type: string
+          description: Number of packages in this item line that contain Dangerous Goods.
+          example:  2 of 12
+        dgPackingType:
+          type: string
+          description: Indicates the type of packaging used for Dangerous Goods
+          example: 4G
+        dgPackingGroup:
+          type: string
+          description: Denotes the group of packaging that this item belongs to
+          example: X8
+        dgTechnicalName:
+          type: string 
+          description: Technical Name of the dangerous substance
+          example: Nicotine
+        dgShippingName:
+          type: string
+          description: Proper shipping name as per DG register
+          example:  NitrineSulfate,Solid
+        dgHazchem:
+          type: boolean
+          description: Denotes if the HAZCHEM warning plate has to be displayed on the vehicle / container carrying the freight
+          example:
+        dgSubsidaryRisk:
+          type: string
+          description: Indicates the secondary DG Class or Classes related to the individual item. This is used if there is a primary and secondary dangerous goods risk applicable. 
+          example: 6.1
+        dgContact:
+          $ref: '#/components/schemas/contact'
+    equipment:
+      type: object
+      properties:
+        lineItemID:
+          type: string
+          description: Multiple Equipment Entries can be made in this section. This is the Line ID.
+          example: 10
+        specialisedHandling:
+          type: string
+          description: Specialised Handling equipment for the freight which the customer nominates. Equipment may be additional to the truck.
+          example: Crane
+        noteSpecialHandling:
+          type: string
+          description: Further information related to the handling equipment.
+          example: 25To Mobile Crane required at 9:30 am
+        packingEquipment:
+          type: string
+          description:  Packing Equipment may be required to transport the freight. 
+          example: Chains
+        notePackingEquipment:
+          type: string
+          description: Further information related to the packing material.
+          example: Chains need to be 5to rated
+        additionalReferences:
+          type: array
+          items:
+            $ref: '#/components/schemas/additionalReference'
+    contact:
+      type: object
+      properties:
+        contactName:
+          type: string
+          description: Name of contact person
+          example: John Smith
+        phone:
+          type: string
+          description: contact phone number
+          example: 0400 123 456
+    pagination:
+      required:
+        - limit
+        - start
+        - total
+      type: object
+      properties:
+        total:
+          type: integer
+          description: the total number of shipments returned from the call
+          example: 500
+        limit:
+          maximum: 100
+          minimum: 1
+          type: integer
+          description: the number of items to return in one request. Limit is default to 10 if the limit parameter is not specified. The value is capped at 100.
+          example: 10
+        start:
+          type: integer
+          description: the number of items to skip before selecting.
+          example: 30
+    error:
+      type: object
+      properties:
+        errorCode:
+          type: string
+          example: 'BK001'
+        error:
+          type: string
+          example: Invalid request
+        message:
+          type: string
+          example: Request payload is not valid
+  responses:
+    UnauthorizedError:
+      description: Authentication information is missing or invalid
+      headers:
+        WWW_Authenticate:
+          schema:
+            type: string
+security: 
+  - jwt: []
