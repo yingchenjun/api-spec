@@ -682,7 +682,7 @@ components:
           type: string
           description: booking reference number provided by the customer
           example: ABC123
-        ShipmentNumber:
+        shipmentNumber:
           type: string
           description: Shipmet number from TMS
           example: 54564654
@@ -707,7 +707,7 @@ components:
           format: date-time
           description: UTC time Stamp of when the Booking record was first created. 
           example: '2021-01-22T10:30:00Z'
-        ModifiedDateTime:
+        modifiedDateTime:
           type: string
           format: date-time
           description: UTC time Stamp of when the Booking record was last modified.
